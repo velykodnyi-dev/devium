@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import com.openclaw.mobile.data.Diagnostic
 import com.openclaw.mobile.data.MockBackendRepository
 import com.openclaw.mobile.theme.*
+import com.openclaw.mobile.ui.components.IdeTitleBar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -38,36 +39,30 @@ fun FileViewerScreen(fileId: String, onEditClick: () -> Unit, onBack: () -> Unit
         isLoading = false
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(if (fileId == "f1") "main.py" else "File", color = DarkPrimary) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { showIntelligenceSheet = true }) {
-                        Icon(Icons.Default.Info, contentDescription = "Intelligence")
-                    }
-                    IconButton(onClick = onEditClick) {
-                        Icon(Icons.Default.Edit, contentDescription = "Edit")
-                    }
+    Column(modifier = Modifier.fillMaxSize().background(IdeBackground)) {
+        IdeTitleBar(
+            title = if (fileId == "f1") "main.py" else "File",
+            navigationIcon = Icons.AutoMirrored.Filled.ArrowBack,
+            onNavigationClick = onBack,
+            actions = {
+                IconButton(onClick = { showIntelligenceSheet = true }) {
+                    Icon(Icons.Default.Info, contentDescription = "Intelligence", tint = IdeTextPrimary)
                 }
-            )
-        }
-    ) { padding ->
+                IconButton(onClick = onEditClick) {
+                    Icon(Icons.Default.Edit, contentDescription = "Edit", tint = IdeTextPrimary)
+                }
+            }
+        )
+
         if (isLoading) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = DarkPrimary)
+                CircularProgressIndicator(color = IdeAccent)
             }
         } else {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(padding)
-                    .background(CodeBackground)
+                    .background(IdeBackground)
             ) {
                 CodeViewer(content = fileContent)
             }
@@ -78,20 +73,20 @@ fun FileViewerScreen(fileId: String, onEditClick: () -> Unit, onBack: () -> Unit
         ModalBottomSheet(
             onDismissRequest = { showIntelligenceSheet = false },
             sheetState = sheetState,
-            containerColor = DarkSurface
+            containerColor = IdeSurface
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp)
             ) {
-                Text("Code Intelligence", style = MaterialTheme.typography.titleLarge, color = DarkPrimary)
+                Text("Code Intelligence", style = MaterialTheme.typography.titleLarge, color = IdeTextPrimary)
                 Spacer(Modifier.height(16.dp))
                 if (diagnostics.isEmpty()) {
-                    Text("No diagnostics available.")
+                    Text("No diagnostics available.", color = IdeTextSecondary)
                 } else {
                     diagnostics.forEach { diag ->
-                        Text("Line ${diag.line}: ${diag.message}", color = DarkError)
+                        Text("Line ${diag.line}: ${diag.message}", color = IdeError)
                     }
                 }
                 Spacer(Modifier.height(32.dp))
@@ -115,14 +110,14 @@ fun CodeViewer(content: String) {
         Column(
             modifier = Modifier
                 .width(48.dp)
-                .background(DarkSurface)
+                .background(IdeBackground)
                 .padding(vertical = 8.dp, horizontal = 4.dp),
             horizontalAlignment = Alignment.End
         ) {
             lines.forEachIndexed { index, _ ->
                 Text(
                     text = (index + 1).toString(),
-                    color = TextSecondary,
+                    color = IdeTextSecondary,
                     style = CodeTypography
                 )
             }
@@ -168,7 +163,7 @@ fun highlightSyntax(code: String) = buildAnnotatedString {
                 withStyle(SpanStyle(color = CodeKeyword)) { append(word) }
             }
             else -> {
-                withStyle(SpanStyle(color = CodeText)) { append(word) }
+                withStyle(SpanStyle(color = IdeTextPrimary)) { append(word) }
             }
         }
     }

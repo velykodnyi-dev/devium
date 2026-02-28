@@ -10,7 +10,9 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import com.openclaw.mobile.theme.DarkPrimary
+import com.openclaw.mobile.theme.*
+import com.openclaw.mobile.ui.components.IdeButton
+import com.openclaw.mobile.ui.components.IdeTextField
 
 @Composable
 fun AuthScreen(onLoginSuccess: () -> Unit) {
@@ -22,6 +24,7 @@ fun AuthScreen(onLoginSuccess: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(IdeBackground)
             .padding(24.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
@@ -29,32 +32,29 @@ fun AuthScreen(onLoginSuccess: () -> Unit) {
         Text(
             text = "OpenClaw Mobile",
             style = MaterialTheme.typography.titleLarge,
-            color = DarkPrimary,
+            color = IdeTextPrimary,
             modifier = Modifier.padding(bottom = 32.dp)
         )
 
-        OutlinedTextField(
+        IdeTextField(
             value = endpoint,
             onValueChange = { endpoint = it },
-            label = { Text("Backend Endpoint") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true
+            placeholder = "Backend Endpoint"
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        OutlinedTextField(
+        IdeTextField(
             value = token,
             onValueChange = { token = it },
-            label = { Text("Access Token") },
-            visualTransformation = PasswordVisualTransformation(),
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true
+            placeholder = "Access Token",
+            visualTransformation = PasswordVisualTransformation()
         )
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        Button(
+        IdeButton(
+            text = "Connect",
             onClick = {
                 isLoading = true
                 coroutineScope.launch {
@@ -63,19 +63,9 @@ fun AuthScreen(onLoginSuccess: () -> Unit) {
                     onLoginSuccess()
                 }
             },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(50.dp),
-            enabled = token.isNotEmpty() && endpoint.isNotEmpty() && !isLoading
-        ) {
-            if (isLoading) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(24.dp),
-                    color = MaterialTheme.colorScheme.onPrimary
-                )
-            } else {
-                Text("Connect")
-            }
-        }
+            enabled = token.isNotEmpty() && endpoint.isNotEmpty(),
+            isLoading = isLoading,
+            modifier = Modifier.fillMaxWidth().height(40.dp)
+        )
     }
 }

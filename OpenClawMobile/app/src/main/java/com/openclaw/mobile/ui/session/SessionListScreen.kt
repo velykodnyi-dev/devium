@@ -1,5 +1,6 @@
 package com.openclaw.mobile.ui.session
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -14,9 +15,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.openclaw.mobile.data.MockBackendRepository
 import com.openclaw.mobile.data.OpenClawSession
-import com.openclaw.mobile.theme.DarkPrimary
+import com.openclaw.mobile.theme.*
+import com.openclaw.mobile.ui.components.IdeSurfaceCard
+import com.openclaw.mobile.ui.components.IdeTitleBar
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SessionListScreen(onSessionClick: (String) -> Unit, onBack: () -> Unit) {
     val repository = remember { MockBackendRepository() }
@@ -29,54 +31,35 @@ fun SessionListScreen(onSessionClick: (String) -> Unit, onBack: () -> Unit) {
         isLoading = false
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Agent Sessions", color = DarkPrimary) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                }
-            )
-        }
-    ) { padding ->
+    Column(modifier = Modifier.fillMaxSize().background(IdeBackground)) {
+        IdeTitleBar(
+            title = "Agent Sessions",
+            navigationIcon = Icons.AutoMirrored.Filled.ArrowBack,
+            onNavigationClick = onBack
+        )
+
         if (isLoading) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = DarkPrimary)
+                CircularProgressIndicator(color = IdeAccent)
             }
         } else {
             LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
+                modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(sessions) { session ->
-                    SessionItem(session = session) {
-                        onSessionClick(session.id)
+                    IdeSurfaceCard(onClick = { onSessionClick(session.id) }) {
+                        Column {
+                            Text(session.title, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, color = IdeTextPrimary)
+                            Text("Status: ${session.status.name}", style = MaterialTheme.typography.bodyMedium, color = IdeInfo)
+                            Spacer(Modifier.height(8.dp))
+                            Text("Workspace: ${session.workspaceId}", style = MaterialTheme.typography.labelMedium, color = IdeTextSecondary)
+                            Text("Updated: ${session.lastUpdated}", style = MaterialTheme.typography.labelSmall, color = IdeTextSecondary)
+                        }
                     }
                 }
             }
-        }
-    }
-}
-
-@Composable
-fun SessionItem(session: OpenClawSession, onClick: () -> Unit) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() },
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-    ) {
-        Column(Modifier.padding(16.dp)) {
-            Text(session.title, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
-            Text("Status: ${session.status.name}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
-            Spacer(Modifier.height(8.dp))
-            Text("Workspace: ${session.workspaceId}", style = MaterialTheme.typography.labelMedium)
-            Text("Updated: ${session.lastUpdated}", style = MaterialTheme.typography.labelSmall)
         }
     }
 }

@@ -1,22 +1,25 @@
 package com.openclaw.mobile.ui.workspace
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Description
-import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.automirrored.filled.InsertDriveFile
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.openclaw.mobile.data.FileNode
+import com.openclaw.mobile.data.FileStatus
 import com.openclaw.mobile.data.MockBackendRepository
-import com.openclaw.mobile.theme.DarkPrimary
+import com.openclaw.mobile.theme.*
+import com.openclaw.mobile.ui.components.IdeTitleBar
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WorkspaceBrowserScreen(workspaceId: String, onFileClick: (String) -> Unit, onBack: () -> Unit) {
     val repository = remember { MockBackendRepository() }
@@ -29,29 +32,21 @@ fun WorkspaceBrowserScreen(workspaceId: String, onFileClick: (String) -> Unit, o
         isLoading = false
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Workspace Files", color = DarkPrimary) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                }
-            )
-        }
-    ) { padding ->
+    Column(modifier = Modifier.fillMaxSize().background(IdeBackground)) {
+        IdeTitleBar(
+            title = "EXPLORER",
+            navigationIcon = Icons.AutoMirrored.Filled.ArrowBack,
+            onNavigationClick = onBack
+        )
+
         if (isLoading) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = DarkPrimary)
+                CircularProgressIndicator(color = IdeAccent)
             }
         } else {
             fileTree?.let { rootNode ->
                 LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(padding),
-                    contentPadding = PaddingValues(16.dp)
+                    modifier = Modifier.fillMaxSize()
                 ) {
                     item {
                         FileTreeItem(node = rootNode, level = 0, onFileClick = onFileClick)
@@ -59,7 +54,7 @@ fun WorkspaceBrowserScreen(workspaceId: String, onFileClick: (String) -> Unit, o
                 }
             } ?: run {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("Could not load workspace")
+                    Text("Could not load workspace", color = IdeTextPrimary)
                 }
             }
         }
@@ -69,6 +64,14 @@ fun WorkspaceBrowserScreen(workspaceId: String, onFileClick: (String) -> Unit, o
 @Composable
 fun FileTreeItem(node: FileNode, level: Int, onFileClick: (String) -> Unit) {
     var isExpanded by remember { mutableStateOf(level == 0) }
+    var isHovered by remember { mutableStateOf(false) } // Android doesn't really have hover, but we'll use click states
+
+    val textColor = when (node.status) {
+        FileStatus.MODIFIED -> IdeModifiedText
+        FileStatus.UNTRACKED, FileStatus.ADDED -> IdeAddedText
+        FileStatus.DELETED -> IdeDeletedText
+        FileStatus.UNMODIFIED -> IdeTextPrimary
+    }
 
     Column {
         Row(
@@ -81,20 +84,48 @@ fun FileTreeItem(node: FileNode, level: Int, onFileClick: (String) -> Unit) {
                         onFileClick(node.id)
                     }
                 }
-                .padding(start = (level * 16).dp, top = 8.dp, bottom = 8.dp),
+                .padding(start = (level * 16 + 8).dp, top = 4.dp, bottom = 4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                imageVector = if (node.isDirectory) Icons.Default.Folder else Icons.Default.Description,
-                contentDescription = null,
-                tint = if (node.isDirectory) DarkPrimary else MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.size(24.dp)
-            )
-            Spacer(modifier = Modifier.width(16.dp))
+            if (node.isDirectory) {
+                Icon(
+                    imageVector = if (isExpanded) Icons.Default.ExpandMore else Icons.Default.ChevronRight,
+                    contentDescription = null,
+                    tint = IdeTextSecondary,
+                    modifier = Modifier.size(16.dp)
+                )
+            } else {
+                Spacer(modifier = Modifier.width(16.dp))
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.InsertDriveFile,
+                    contentDescription = null,
+                    tint = IdeTextSecondary,
+                    modifier = Modifier.size(14.dp)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+            }
+
             Text(
                 text = node.name,
-                style = MaterialTheme.typography.bodyLarge
+                style = MaterialTheme.typography.bodyMedium,
+                color = textColor,
+                modifier = Modifier.padding(start = 4.dp)
             )
+
+            if (node.status != FileStatus.UNMODIFIED) {
+                Spacer(modifier = Modifier.weight(1f))
+                Text(
+                    text = when(node.status) {
+                        FileStatus.MODIFIED -> "M"
+                        FileStatus.UNTRACKED, FileStatus.ADDED -> "U"
+                        FileStatus.DELETED -> "D"
+                        else -> ""
+                    },
+                    style = MaterialTheme.typography.labelSmall,
+                    color = textColor,
+                    modifier = Modifier.padding(end = 16.dp)
+                )
+            }
         }
 
         if (isExpanded && node.isDirectory && node.children != null) {

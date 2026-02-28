@@ -1,5 +1,6 @@
 package com.openclaw.mobile.ui.workspace
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -14,9 +15,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.openclaw.mobile.data.MockBackendRepository
 import com.openclaw.mobile.data.Workspace
-import com.openclaw.mobile.theme.DarkPrimary
+import com.openclaw.mobile.theme.*
+import com.openclaw.mobile.ui.components.IdeSurfaceCard
+import com.openclaw.mobile.ui.components.IdeTitleBar
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WorkspaceListScreen(onWorkspaceClick: (String) -> Unit, onBack: () -> Unit) {
     val repository = remember { MockBackendRepository() }
@@ -29,53 +31,34 @@ fun WorkspaceListScreen(onWorkspaceClick: (String) -> Unit, onBack: () -> Unit) 
         isLoading = false
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Workspaces", color = DarkPrimary) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                }
-            )
-        }
-    ) { padding ->
+    Column(modifier = Modifier.fillMaxSize().background(IdeBackground)) {
+        IdeTitleBar(
+            title = "Workspaces",
+            navigationIcon = Icons.AutoMirrored.Filled.ArrowBack,
+            onNavigationClick = onBack
+        )
+
         if (isLoading) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = DarkPrimary)
+                CircularProgressIndicator(color = IdeAccent)
             }
         } else {
             LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
+                modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(workspaces) { workspace ->
-                    WorkspaceItem(workspace) {
-                        onWorkspaceClick(workspace.id)
+                    IdeSurfaceCard(onClick = { onWorkspaceClick(workspace.id) }) {
+                        Column {
+                            Text(workspace.name, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium, color = IdeTextPrimary)
+                            Text(workspace.path, style = MaterialTheme.typography.bodyMedium, color = IdeTextSecondary)
+                            Spacer(Modifier.height(8.dp))
+                            Text("Last accessed: ${workspace.lastAccessed}", style = MaterialTheme.typography.labelMedium, color = IdeTextSecondary)
+                        }
                     }
                 }
             }
-        }
-    }
-}
-
-@Composable
-fun WorkspaceItem(workspace: Workspace, onClick: () -> Unit) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() },
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-    ) {
-        Column(Modifier.padding(16.dp)) {
-            Text(workspace.name, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
-            Text(workspace.path, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Spacer(Modifier.height(8.dp))
-            Text("Last accessed: ${workspace.lastAccessed}", style = MaterialTheme.typography.labelMedium)
         }
     }
 }

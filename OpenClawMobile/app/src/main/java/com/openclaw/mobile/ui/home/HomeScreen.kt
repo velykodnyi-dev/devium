@@ -1,5 +1,6 @@
 package com.openclaw.mobile.ui.home
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -15,10 +16,10 @@ import androidx.compose.ui.unit.dp
 import com.openclaw.mobile.data.MockBackendRepository
 import com.openclaw.mobile.data.OpenClawSession
 import com.openclaw.mobile.data.Workspace
-import com.openclaw.mobile.theme.StatusAdded
-import com.openclaw.mobile.theme.DarkPrimary
+import com.openclaw.mobile.theme.*
+import com.openclaw.mobile.ui.components.IdeSurfaceCard
+import com.openclaw.mobile.ui.components.IdeTitleBar
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     onNavigateToWorkspaces: () -> Unit,
@@ -38,39 +39,35 @@ fun HomeScreen(
         isLoading = false
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("OpenClaw", color = DarkPrimary) },
-                actions = {
-                    IconButton(onClick = onNavigateToSettings) {
-                        Icon(Icons.Default.Settings, contentDescription = "Settings")
-                    }
+    Column(modifier = Modifier.fillMaxSize().background(IdeBackground)) {
+        IdeTitleBar(
+            title = "OpenClaw",
+            actions = {
+                IconButton(onClick = onNavigateToSettings) {
+                    Icon(Icons.Default.Settings, contentDescription = "Settings", tint = IdeTextPrimary)
                 }
-            )
-        }
-    ) { padding ->
+            }
+        )
+
         if (isLoading) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = DarkPrimary)
+                CircularProgressIndicator(color = IdeAccent)
             }
         } else {
             LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
+                modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 item {
                     Text(
                         "Connection Status: Connected",
-                        color = StatusAdded,
+                        color = IdeAddedText,
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
 
-                item { Spacer(Modifier.height(16.dp)) }
+                item { Spacer(Modifier.height(8.dp)) }
 
                 item {
                     SectionHeader(
@@ -79,13 +76,17 @@ fun HomeScreen(
                     )
                 }
                 items(workspaces) { workspace ->
-                    WorkspaceCard(workspace) {
-                        // In a real app we would navigate to the specific workspace browser
-                        onNavigateToWorkspaces()
+                    IdeSurfaceCard(onClick = { onNavigateToWorkspaces() }) {
+                        Column {
+                            Text(workspace.name, fontWeight = FontWeight.Bold, color = IdeTextPrimary)
+                            Text(workspace.path, style = MaterialTheme.typography.bodySmall, color = IdeTextSecondary)
+                            Spacer(Modifier.height(8.dp))
+                            Text("Accessed ${workspace.lastAccessed}", style = MaterialTheme.typography.labelSmall, color = IdeTextSecondary)
+                        }
                     }
                 }
 
-                item { Spacer(Modifier.height(16.dp)) }
+                item { Spacer(Modifier.height(8.dp)) }
 
                 item {
                     SectionHeader(
@@ -94,8 +95,13 @@ fun HomeScreen(
                     )
                 }
                 items(sessions) { session ->
-                    SessionCard(session) {
-                        onSessionClick(session.id)
+                    IdeSurfaceCard(onClick = { onSessionClick(session.id) }) {
+                        Column {
+                            Text(session.title, fontWeight = FontWeight.Bold, color = IdeTextPrimary)
+                            Text("Status: ${session.status.name}", style = MaterialTheme.typography.bodySmall, color = IdeInfo)
+                            Spacer(Modifier.height(8.dp))
+                            Text("Updated ${session.lastUpdated}", style = MaterialTheme.typography.labelSmall, color = IdeTextSecondary)
+                        }
                     }
                 }
             }
@@ -110,43 +116,12 @@ fun SectionHeader(title: String, onSeeAll: () -> Unit) {
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(title, style = MaterialTheme.typography.titleLarge)
-        TextButton(onClick = onSeeAll) {
-            Text("See All", color = DarkPrimary)
-        }
-    }
-}
-
-@Composable
-fun WorkspaceCard(workspace: Workspace, onClick: () -> Unit) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() },
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-    ) {
-        Column(Modifier.padding(16.dp)) {
-            Text(workspace.name, fontWeight = FontWeight.Bold)
-            Text(workspace.path, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Spacer(Modifier.height(8.dp))
-            Text("Accessed ${workspace.lastAccessed}", style = MaterialTheme.typography.labelSmall)
-        }
-    }
-}
-
-@Composable
-fun SessionCard(session: OpenClawSession, onClick: () -> Unit) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onClick() },
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-    ) {
-        Column(Modifier.padding(16.dp)) {
-            Text(session.title, fontWeight = FontWeight.Bold)
-            Text("Status: ${session.status.name}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
-            Spacer(Modifier.height(8.dp))
-            Text("Updated ${session.lastUpdated}", style = MaterialTheme.typography.labelSmall)
-        }
+        Text(title, style = MaterialTheme.typography.titleMedium, color = IdeTextPrimary)
+        Text(
+            text = "See All",
+            color = IdeAccent,
+            style = MaterialTheme.typography.bodySmall,
+            modifier = Modifier.clickable { onSeeAll() }.padding(8.dp)
+        )
     }
 }

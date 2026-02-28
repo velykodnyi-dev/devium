@@ -1,6 +1,7 @@
 package com.openclaw.mobile.ui.session
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -20,8 +21,11 @@ import com.openclaw.mobile.data.MockBackendRepository
 import com.openclaw.mobile.data.OpenClawSession
 import com.openclaw.mobile.data.SessionLog
 import com.openclaw.mobile.theme.*
+import com.openclaw.mobile.ui.components.IdeButton
+import com.openclaw.mobile.ui.components.IdeSurfaceCard
+import com.openclaw.mobile.ui.components.IdeTextField
+import com.openclaw.mobile.ui.components.IdeTitleBar
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SessionDetailScreen(sessionId: String, onViewDiff: () -> Unit, onBack: () -> Unit) {
     val repository = remember { MockBackendRepository() }
@@ -43,71 +47,34 @@ fun SessionDetailScreen(sessionId: String, onViewDiff: () -> Unit, onBack: () ->
         }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Session: ${session?.title ?: "..."}", color = DarkPrimary) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                actions = {
-                    IconButton(onClick = onViewDiff) {
-                        Icon(Icons.Default.RateReview, contentDescription = "Review Diff")
-                    }
-                }
-            )
-        },
-        bottomBar = {
-            // Simulated chat / instruction input box
-            Surface(
-                color = MaterialTheme.colorScheme.surface,
-                shadowElevation = 8.dp
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    var text by remember { mutableStateOf("") }
-                    OutlinedTextField(
-                        value = text,
-                        onValueChange = { text = it },
-                        modifier = Modifier.weight(1f),
-                        placeholder = { Text("Send instruction to agent...") },
-                        singleLine = true
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Button(onClick = { /* Send mock instruction */ }) {
-                        Text("Send")
-                    }
+    Column(modifier = Modifier.fillMaxSize().background(IdeBackground)) {
+        IdeTitleBar(
+            title = "Session: ${session?.title ?: "..."}",
+            navigationIcon = Icons.AutoMirrored.Filled.ArrowBack,
+            onNavigationClick = onBack,
+            actions = {
+                IconButton(onClick = onViewDiff) {
+                    Icon(Icons.Default.RateReview, contentDescription = "Review Diff", tint = IdeTextPrimary)
                 }
             }
-        }
-    ) { padding ->
+        )
+
         if (isLoading) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = DarkPrimary)
+            Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator(color = IdeAccent)
             }
         } else {
             Column(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
+                    .fillMaxWidth()
+                    .weight(1f)
             ) {
                 // Info Header
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-                ) {
-                    Column(Modifier.padding(16.dp)) {
-                        Text("Status: ${session?.status?.name ?: "UNKNOWN"}", color = MaterialTheme.colorScheme.primary)
+                IdeSurfaceCard(modifier = Modifier.padding(16.dp)) {
+                    Column {
+                        Text("Status: ${session?.status?.name ?: "UNKNOWN"}", color = IdeInfo)
                         Spacer(Modifier.height(4.dp))
-                        Text("Updated: ${session?.lastUpdated ?: "UNKNOWN"}")
+                        Text("Updated: ${session?.lastUpdated ?: "UNKNOWN"}", color = IdeTextSecondary)
                     }
                 }
 
@@ -117,7 +84,8 @@ fun SessionDetailScreen(sessionId: String, onViewDiff: () -> Unit, onBack: () ->
                         .fillMaxWidth()
                         .weight(1f)
                         .padding(horizontal = 16.dp, vertical = 8.dp)
-                        .background(CodeBackground, Shapes.medium)
+                        .border(1.dp, IdeBorder, Shapes.small)
+                        .background(IdeBackground)
                         .padding(8.dp)
                 ) {
                     LazyColumn(
@@ -131,22 +99,50 @@ fun SessionDetailScreen(sessionId: String, onViewDiff: () -> Unit, onBack: () ->
                 }
             }
         }
+
+        // Simulated chat / instruction input box
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(IdeSurface)
+                .border(1.dp, IdeBorder)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                var text by remember { mutableStateOf("") }
+                IdeTextField(
+                    value = text,
+                    onValueChange = { text = it },
+                    modifier = Modifier.weight(1f),
+                    placeholder = "Send instruction to agent..."
+                )
+                Spacer(Modifier.width(12.dp))
+                IdeButton(
+                    text = "Send",
+                    onClick = { /* Send mock instruction */ }
+                )
+            }
+        }
     }
 }
 
 @Composable
 fun LogLine(log: SessionLog) {
     val color = when (log.type) {
-        LogType.INFO -> TextSecondary
-        LogType.AGENT -> DarkPrimary
+        LogType.INFO -> IdeTextSecondary
+        LogType.AGENT -> IdeAccent
         LogType.COMMAND -> CodeFunction
-        LogType.ERROR -> DarkError
+        LogType.ERROR -> IdeError
     }
 
     Row(modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
         Text(
             text = "[${log.timestamp}] ",
-            color = Color.DarkGray,
+            color = IdeBorderLight,
             fontFamily = FontFamily.Monospace,
             style = MaterialTheme.typography.labelSmall
         )
